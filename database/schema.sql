@@ -1,5 +1,6 @@
 -- ============================================================
--- FixMyCampus - Complete Database Schema
+-- FixMyCampus
+-- Complete Database Schema
 -- Import this file in phpMyAdmin, then run: node server/seed.js
 -- ============================================================
 
