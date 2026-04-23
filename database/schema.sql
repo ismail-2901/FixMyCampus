@@ -1,26 +1,17 @@
 -- ============================================================
--- FixMyCampus
--- Complete Database Schema
--- Import this file in phpMyAdmin, then run: node server/seed.js
+-- FixMyCampus v2.0 - Complete Database Schema
+-- Run this in phpMyAdmin > SQL tab, then run: node server/seed.js
 -- ============================================================
 
-
-
-DROP DATABASE IF EXISTS fixmy_campus;
-CREATE DATABASE fixmy_campus CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
-USE fixmy_campus;
-
-
+DROP DATABASE IF EXISTS fixmycampus;
+CREATE DATABASE fixmycampus CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+USE fixmycampus;
 
 CREATE TABLE Departments (
   department_id INT AUTO_INCREMENT PRIMARY KEY,
   name VARCHAR(150) NOT NULL UNIQUE,
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
-
-
-
-
 
 CREATE TABLE Users (
   user_id INT AUTO_INCREMENT PRIMARY KEY,
@@ -38,9 +29,6 @@ CREATE TABLE Users (
   FOREIGN KEY (department_id) REFERENCES Departments(department_id) ON DELETE SET NULL
 );
 
-
-
-
 CREATE TABLE Anonymous_ID (
   anon_id VARCHAR(20) PRIMARY KEY,
   user_id INT NOT NULL UNIQUE,
@@ -48,14 +36,10 @@ CREATE TABLE Anonymous_ID (
   FOREIGN KEY (user_id) REFERENCES Users(user_id) ON DELETE CASCADE
 );
 
-
-
 CREATE TABLE Categories (
   category_id INT AUTO_INCREMENT PRIMARY KEY,
   name VARCHAR(100) NOT NULL UNIQUE
 );
-
-
 
 CREATE TABLE Reports (
   report_id VARCHAR(20) PRIMARY KEY,
@@ -75,8 +59,6 @@ CREATE TABLE Reports (
   FOREIGN KEY (department_id) REFERENCES Departments(department_id)
 );
 
-
-
 CREATE TABLE Attachments (
   attachment_id INT AUTO_INCREMENT PRIMARY KEY,
   report_id VARCHAR(20) NOT NULL,
@@ -85,8 +67,6 @@ CREATE TABLE Attachments (
   uploaded_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   FOREIGN KEY (report_id) REFERENCES Reports(report_id) ON DELETE CASCADE
 );
-
-
 
 CREATE TABLE Report_Responses (
   response_id INT AUTO_INCREMENT PRIMARY KEY,
@@ -98,8 +78,6 @@ CREATE TABLE Report_Responses (
   FOREIGN KEY (report_id) REFERENCES Reports(report_id) ON DELETE CASCADE,
   FOREIGN KEY (admin_id) REFERENCES Users(user_id)
 );
-
-
 
 CREATE TABLE Comments (
   comment_id INT AUTO_INCREMENT PRIMARY KEY,
@@ -114,8 +92,6 @@ CREATE TABLE Comments (
   FOREIGN KEY (parent_comment_id) REFERENCES Comments(comment_id) ON DELETE CASCADE
 );
 
-
-
 CREATE TABLE Reactions (
   reaction_id INT AUTO_INCREMENT PRIMARY KEY,
   report_id VARCHAR(20),
@@ -123,34 +99,17 @@ CREATE TABLE Reactions (
   user_id INT NOT NULL,
   type ENUM('like','dislike','warning','love') NOT NULL,
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-  FOREIGN KEY (report_id) REFERENCES Reports(report_id) ON DELETE CASCADE,
-  FOREIGN KEY (comment_id) REFERENCES Comments(comment_id) ON DELETE CASCADE,
   FOREIGN KEY (user_id) REFERENCES Users(user_id) ON DELETE CASCADE
 );
 
-
-
-CREATE TABLE Chats (
-  chat_id INT AUTO_INCREMENT PRIMARY KEY,
-  user1_id INT NOT NULL,
-  user2_id INT NOT NULL,
-  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-  UNIQUE KEY unique_chat (user1_id, user2_id),
-  FOREIGN KEY (user1_id) REFERENCES Users(user_id) ON DELETE CASCADE,
-  FOREIGN KEY (user2_id) REFERENCES Users(user_id) ON DELETE CASCADE
-);
-
-
-
-CREATE TABLE Messages (
-  message_id INT AUTO_INCREMENT PRIMARY KEY,
-  chat_id INT NOT NULL,
-  sender_id INT NOT NULL,
-  content TEXT NOT NULL,
-  is_read BOOLEAN DEFAULT FALSE,
-  sent_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-  FOREIGN KEY (chat_id) REFERENCES Chats(chat_id) ON DELETE CASCADE,
-  FOREIGN KEY (sender_id) REFERENCES Users(user_id) ON DELETE CASCADE
+CREATE TABLE Admin_Assignments (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  admin_id INT NOT NULL,
+  department_id INT NOT NULL,
+  assigned_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  UNIQUE KEY unique_assignment (admin_id, department_id),
+  FOREIGN KEY (admin_id) REFERENCES Users(user_id) ON DELETE CASCADE,
+  FOREIGN KEY (department_id) REFERENCES Departments(department_id) ON DELETE CASCADE
 );
 
 CREATE TABLE Group_Discussions (
@@ -159,7 +118,7 @@ CREATE TABLE Group_Discussions (
   description TEXT,
   created_by INT NOT NULL,
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-  FOREIGN KEY (created_by) REFERENCES Users(user_id)
+  FOREIGN KEY (created_by) REFERENCES Users(user_id) ON DELETE CASCADE
 );
 
 CREATE TABLE Group_Members (
@@ -191,16 +150,30 @@ CREATE TABLE AI_Chat_Log (
   FOREIGN KEY (user_id) REFERENCES Users(user_id) ON DELETE CASCADE
 );
 
-CREATE TABLE Admin_Assignments (
-  id INT AUTO_INCREMENT PRIMARY KEY,
-  admin_id INT NOT NULL,
-  department_id INT NOT NULL,
-  assigned_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-  UNIQUE KEY unique_assignment (admin_id, department_id),
-  FOREIGN KEY (admin_id) REFERENCES Users(user_id) ON DELETE CASCADE,
-  FOREIGN KEY (department_id) REFERENCES Departments(department_id) ON DELETE CASCADE
+-- ── NOTIFICATIONS (v2.0 new table) ────────────────────
+CREATE TABLE Notifications (
+  notification_id INT AUTO_INCREMENT PRIMARY KEY,
+  user_id INT NOT NULL,
+  type ENUM(
+    'new_report',
+    'status_change',
+    'admin_response',
+    'closure_request',
+    'group_message',
+    'report_approved',
+    'report_rejected'
+  ) NOT NULL,
+  title VARCHAR(200) NOT NULL,
+  message TEXT NOT NULL,
+  link VARCHAR(300),
+  is_read BOOLEAN DEFAULT FALSE,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  FOREIGN KEY (user_id) REFERENCES Users(user_id) ON DELETE CASCADE,
+  INDEX idx_user_read (user_id, is_read),
+  INDEX idx_created (created_at)
 );
 
+-- ── SEED DATA ─────────────────────────────────────────
 INSERT INTO Departments (name) VALUES
 ('Software Engineering'),('Computer Science and Engineering'),
 ('Information Technology and Management'),('Multimedia and Creative Technology'),
@@ -213,3 +186,5 @@ INSERT INTO Departments (name) VALUES
 INSERT INTO Categories (name) VALUES
 ('Infrastructure'),('Internet Problems'),('Academic Issue'),
 ('Harassment'),('Cleanliness'),('Security'),('Administration'),('Transport'),('Others');
+
+SELECT 'Schema created successfully! Now run: node server/seed.js' AS next_step;
